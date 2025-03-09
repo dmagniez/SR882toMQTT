@@ -3,19 +3,20 @@ import json
 import paho.mqtt.client as mqtt
 import time
 
-# Configuration du port série
+# Global settings
 port = "/dev/ttyUSB0"
 baudrate = 4800
 Mqtt_target = "192.168.1.40"
 
-# Envoi de la commande
+# Query register
 commande = bytes.fromhex("0103000000101400")
 
+# Open MQTT communication
 MqttClient = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,"Solar")
 MqttClient.connect(Mqtt_target,1883)
 MqttClient.loop_start()
 
-# Ouvrir le port série
+#some function to improve readability
 
 def to_int(value):
 	x = int(value,16)
@@ -25,16 +26,16 @@ def to_bin(value):
 	x = format(x, '08b')
 	return x
 
-
+# loop every 5 sec
 while True:
 	with serial.Serial(port, baudrate, timeout=1) as ser:
-		ser.write(commande)  # Envoi de la commande
-		response = ser.read(35)  # Lecture de la réponse (ajuster si besoin)
+		ser.write(commande)
+		response = ser.read(35)
 
-	# Convertir la réponse en hexadécimal lisible
+	# convert to hex
 	response_hex = response.hex().upper()
 
-	# Ignorer les 4 premiers caractères (01 03) → Données utiles à partir de l'index 4
+	# Ignore first 2 character
 	data_hex = response_hex[2:]
 
 	decoded_values = {
@@ -46,7 +47,7 @@ while True:
 	"T5" : to_int(data_hex[16:18]), #2L
 	"T6" : to_int(data_hex[18:20]), #3H
 	"T7" : to_int(data_hex[20:22]), #3L
-	#index 4 vide
+	#index 4 empty
 	"pump_time" : to_int(data_hex[24:28]), #5H
 	"daily_thermal_output" : to_int(data_hex[28:32]), #6
 	"accumulated_thermal_output_kw" : to_int(data_hex[32:36]), #7
